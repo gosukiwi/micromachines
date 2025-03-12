@@ -300,3 +300,87 @@ test("compose 3 machines using builder", async () => {
 
   composite.start();
 });
+
+test("compose 3 machines stops on failure", async () => {
+  expect.assertions(4);
+
+  // Machine A
+  // ===========================================================================
+  interface MachineAContext {
+    name: string;
+  }
+
+  type MachineAStates = "INITIAL" | "FINAL";
+
+  const machineA = createMachine<MachineAContext, MachineAStates>(
+    (transition) => ({
+      context: { name: "" },
+      initial: "INITIAL",
+      final: "FINAL",
+      states: {
+        INITIAL() {
+          transition("FINAL", { name: "Fede" });
+        },
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Machine B
+  // ===========================================================================
+  interface MachineBContext {
+    age: number;
+  }
+
+  type MachineBStates = "INITIAL" | "FINAL" | "ERROR";
+
+  const machineB = createMachine<MachineBContext, MachineBStates>(
+    (transition) => ({
+      initial: "INITIAL",
+      final: "FINAL",
+      context: { age: 0 },
+      states: {
+        INITIAL() {
+          transition("ERROR");
+        },
+        ERROR: undefined,
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Machine C
+  // ===========================================================================
+  interface MachineCContext {
+    country: string;
+  }
+
+  type MachineCStates = "INITIAL" | "FINAL";
+
+  const machineC = createMachine<MachineCContext, MachineCStates>(
+    (transition) => ({
+      initial: "INITIAL",
+      final: "FINAL",
+      context: { country: "" },
+      states: {
+        INITIAL() {
+          transition("FINAL", { country: "Argentina" });
+        },
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Create a composite machine (instance) from two machines (also instances)
+  // ===========================================================================
+  const composite = compose(machineA, machineB, machineC);
+
+  composite.onTerminated(({ state, context }) => {
+    expect(state).toEqual("ERROR");
+    expect(context.name).toEqual("Fede");
+    expect(context.age).toEqual(0);
+    expect(context.country).toEqual("");
+  });
+
+  composite.start();
+});
