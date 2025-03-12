@@ -21,13 +21,15 @@ export class State {
 
 type MachineCallback<T> = (params: { state: string; context: T }) => void;
 
-interface Machine<T> {
+export interface Machine<T> {
   context: T;
   start(context?: T): Promise<void>;
   // transition(state: string, context?: T): Promise<void>;
   onStateChanged(callback: MachineCallback<T>): void;
   onTerminated(callback: MachineCallback<T>): void;
+  clearListeners(): void;
   success: boolean;
+  terminated: boolean;
 }
 
 export class StateMachine<T> implements Machine<T> {
@@ -111,6 +113,15 @@ export class StateMachine<T> implements Machine<T> {
   get success() {
     if (this.currentState === undefined) return false;
     return this.final.includes(this.currentState?.name);
+  }
+
+  get terminated() {
+    return this.currentState?.isTerminal === true;
+  }
+
+  clearListeners() {
+    this.onStateChangedCallback = undefined;
+    this.onTerminatedCallback = undefined;
   }
 }
 
@@ -216,6 +227,7 @@ export function compose<Machines extends Machine<unknown>[]>(
     (acc, machine) => ({ ...acc, ...machine.context }),
     {} as MachineContexts<Machines>,
   );
+  let terminated = false;
 
   let onStateChangedCallback:
     | MachineCallback<MachineContexts<Machines>>
@@ -242,6 +254,7 @@ export function compose<Machines extends Machine<unknown>[]>(
         return;
       }
 
+      terminated = true;
       if (onTerminatedCallback) {
         onTerminatedCallback({ state, context: currentContext });
       }
@@ -251,6 +264,7 @@ export function compose<Machines extends Machine<unknown>[]>(
   return {
     context: currentContext,
     async start(context?: MachineContexts<Machines>) {
+      terminated = false;
       if (machines.length > 0) {
         await machines[0].start(context);
       }
@@ -263,6 +277,13 @@ export function compose<Machines extends Machine<unknown>[]>(
     },
     onTerminated(callback: MachineCallback<MachineContexts<Machines>>) {
       onTerminatedCallback = callback;
+    },
+    clearListeners() {
+      onStateChangedCallback = undefined;
+      onTerminatedCallback = undefined;
+    },
+    get terminated() {
+      return terminated;
     },
   };
 }

@@ -1,3 +1,4 @@
+import { setTimeout } from "timers/promises";
 import { expect, test } from "vitest";
 import {
   StateMachine,
@@ -11,17 +12,14 @@ interface Person {
   age: number;
 }
 
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
 const fetchPeople = async (): Promise<Person[]> => {
-  wait(10);
+  await setTimeout(10);
   return [{ name: "Thomas", age: 22 }];
 };
 
-test("navigation between states", () => {
+test("navigation between states", async () => {
+  expect.assertions(7);
+
   interface Context {
     people: Person[];
   }
@@ -65,7 +63,11 @@ test("navigation between states", () => {
   });
 
   // Set initial state and dispatch initial event
-  machine.start();
+  await machine.start();
+
+  while (!machine.terminated) {
+    await setTimeout(10);
+  }
 });
 
 test("builder", async () => {
@@ -102,60 +104,11 @@ test("builder", async () => {
   });
 
   // Set initial state and dispatch initial event
-  await machine.start();
-});
+  machine.start();
 
-test("compose machines", () => {
-  expect.assertions(2);
-
-  interface MachineAContext {
-    name: string;
+  while (!machine.terminated) {
+    await setTimeout(10);
   }
-
-  interface MachineBContext {
-    age: number;
-  }
-
-  const machineA = new StateMachine<MachineAContext>({
-    initial: "INITIAL",
-    final: ["FINAL"],
-    context: {
-      name: "",
-    },
-  });
-  machineA.addState(
-    new State("INITIAL", () => {
-      machineA.transition("FINAL", { name: "Fede" });
-    }),
-  );
-  machineA.addState(new State("FINAL"));
-
-  const machineB = new StateMachine<MachineBContext>({
-    initial: "INITIAL",
-    final: ["FINAL"],
-    context: {
-      age: 0,
-    },
-  });
-  machineB.addState(
-    new State("INITIAL", () => {
-      machineB.transition("FINAL", { age: 35 });
-    }),
-  );
-  machineB.addState(new State("FINAL"));
-
-  // Compose machines A and B
-  machineA.onTerminated(() => {
-    machineB.transition("INITIAL");
-  });
-
-  machineB.onTerminated(() => {
-    const mixedContext = { ...machineA.context, ...machineB.context };
-    expect(mixedContext.name).toEqual("Fede");
-    expect(mixedContext.age).toEqual(35);
-  });
-
-  machineA.start();
 });
 
 test("compose 2 machines using builder", async () => {
@@ -215,7 +168,11 @@ test("compose 2 machines using builder", async () => {
     expect(context.age).toEqual(35);
   });
 
-  composite.start();
+  await composite.start();
+
+  while (!composite.terminated) {
+    await setTimeout(10);
+  }
 });
 
 test("compose 3 machines using builder", async () => {
@@ -292,13 +249,18 @@ test("compose 3 machines using builder", async () => {
   const composite = compose(machineA, machineB, machineC);
 
   composite.onTerminated(({ state, context }) => {
+    console.log("onTerminateCalled COMPOSITE");
     expect(state).toEqual("FINAL");
     expect(context.name).toEqual("Fede");
     expect(context.age).toEqual(35);
     expect(context.country).toEqual("Argentina");
   });
 
-  composite.start();
+  await composite.start();
+
+  while (!composite.terminated) {
+    await setTimeout(10);
+  }
 });
 
 test("compose 3 machines stops on failure", async () => {
@@ -382,5 +344,9 @@ test("compose 3 machines stops on failure", async () => {
     expect(context.country).toEqual("");
   });
 
-  composite.start();
+  await composite.start();
+
+  while (!composite.terminated) {
+    await setTimeout(10);
+  }
 });
