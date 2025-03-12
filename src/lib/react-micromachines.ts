@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { type Machine } from "./state-machine";
 
 interface MachineState<T> {
@@ -28,11 +28,27 @@ export const useMachine = <T>(getMachine: () => Machine<T>) => {
     };
   }, [getMachine]);
 
+  const start = useCallback(() => {
+    machine?.start();
+  }, [machine]);
+
   return {
     ...machineState,
-    start() {
-      machine?.start();
-    },
+    ready: machine !== undefined,
+    start,
+  };
+};
+
+export const useAutoStartingMachine = <T>(getMachine: () => Machine<T>) => {
+  const { start, state, context, ready } = useMachine(getMachine);
+
+  useEffect(() => {
+    if (ready) start();
+  }, [ready, start]);
+
+  return {
+    state,
+    context,
   };
 };
 

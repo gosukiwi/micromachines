@@ -1,5 +1,9 @@
 import "./App.css";
-import { useMachine, createMachine } from "./lib/react-micromachines";
+import {
+  useMachine,
+  useAutoStartingMachine,
+  createMachine,
+} from "./lib/react-micromachines";
 
 interface Person {
   name: string;
@@ -12,7 +16,7 @@ const wait = (ms: number) =>
   });
 
 const fetchPeople = async (): Promise<Person[]> => {
-  await wait(1000);
+  await wait(500);
   return [{ name: "Thomas", age: 22 }];
 };
 
@@ -38,14 +42,15 @@ const peopleMachine = () =>
     },
   }));
 
-function App() {
+const StartWithActionDemo = () => {
   const { start, state, context } = useMachine(peopleMachine);
 
   return (
     <div>
+      <h3>This state machine executes after the button is pressed</h3>
       <p>State: {state}</p>
       {context?.people.map((person) => (
-        <div>
+        <div key={person.name}>
           <p>Name: {person.name}</p>
           <p>Age: {person.age}</p>
         </div>
@@ -53,6 +58,32 @@ function App() {
 
       <button onClick={start}>Start</button>
     </div>
+  );
+};
+
+const AutoStartDemo = () => {
+  const { state, context } = useAutoStartingMachine(peopleMachine);
+
+  return (
+    <div>
+      <h3>This state machine runs as soon a it's rendered</h3>
+      <p>State: {state}</p>
+      {context?.people.map((person) => (
+        <div key={person.name}>
+          <p>Name: {person.name}</p>
+          <p>Age: {person.age}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <>
+      <AutoStartDemo />
+      <StartWithActionDemo />
+    </>
   );
 }
 
