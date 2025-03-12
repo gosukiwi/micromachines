@@ -117,7 +117,6 @@ export class StateMachine<T> implements Machine<T> {
 export const compose = <A, B>(
   machineA: Machine<A>,
   machineB: Machine<B>,
-  aFinal: string, // TODO: So we don't have to pass in the final state, each machine could have an array of "success" states we can check
 ): Machine<A & B> => {
   // let currentState: string | undefined = undefined;
   let currentContext: A & B = { ...machineA.context, ...machineB.context };
@@ -140,7 +139,7 @@ export const compose = <A, B>(
     currentContext = { ...currentContext, ...context };
 
     // Transition to B
-    if (state === aFinal) {
+    if (machineA.success) {
       await machineB.start();
       return;
     }
@@ -167,13 +166,14 @@ export const compose = <A, B>(
   });
 
   machineB.onTerminated(({ state, context }) => {
-    if (onTerminatedCallback !== undefined) {
-      currentContext = { ...currentContext, ...context };
-      onTerminatedCallback({
-        state,
-        context: currentContext,
-      });
-    }
+    currentContext = { ...currentContext, ...context };
+
+    if (onTerminatedCallback === undefined) return;
+
+    onTerminatedCallback({
+      state,
+      context: currentContext,
+    });
   });
 
   return {
@@ -194,6 +194,7 @@ export const compose = <A, B>(
 };
 
 // Builder
+// =============================================================================
 interface MachineDefinition<T, S> {
   context: T;
   initial: S;
@@ -208,7 +209,7 @@ export const createMachine = <Context, States extends string>(
     stateBuilder: StateBuilder<States>,
     transition: (name: States, context?: Context) => Promise<void>,
   ) => MachineDefinition<Context, States>,
-) => {
+): Machine<Context> => {
   // Helper state builder, tied to these generic types
   const createState: StateBuilder<States> = (
     name: States,

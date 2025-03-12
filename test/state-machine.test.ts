@@ -210,7 +210,7 @@ test("compose machines using builder", async () => {
 
   // Create a composite machine (instance) from two machines (also instances)
   // ===========================================================================
-  const composite = compose(machineA, machineB, "FINAL");
+  const composite = compose(machineA, machineB);
 
   composite.onTerminated(({ state, context }) => {
     expect(state).toEqual("FINAL");
