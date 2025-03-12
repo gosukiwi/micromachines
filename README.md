@@ -2,6 +2,12 @@
 
 Minimalistic state machines for TypeScript and React.
 
+# Installation
+
+    $ npm i github:gosukiwi/micro-machines
+
+# Quickstart
+
 ```typescript
 type States = "INITIAL" | "FINAL";
 
@@ -101,4 +107,43 @@ const peopleMachine = () =>
       FINAL: undefined,
     },
   }));
+```
+
+If the machine is not in a state defined in `final`, then `machine.success`
+will be `false`. You can access `success` directly in the React hook. You also
+get a `terminated` boolean to know whether the machine terminated or not.
+
+```typescript
+const { start, state, context, success, terminated } =
+  useMachine(peopleMachine);
+```
+
+## Composing Machines
+
+To get the most out of micro machines, design each machine with a single task
+in mind, and then compose them if you need to run one after the other, eg:
+
+```typescript
+// Same as before, a machine that returns a `people` array in Context
+const getPeopleMachine = () =>
+  createMachine<GetPeopleContext, GetPeopleStates>((transition) => ({ ... }));
+
+// This is a new machine that will use the `people` array
+const updatePeopleMachine = () =>
+  createMachine<Context, States>((transition) => ({
+    context: {
+      people: [],
+    },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL() {
+        const people = await updatePeople(context.people);
+        await transition('FINAL');
+      },
+      FINAL: undefined,
+    },
+  }));
+
+const getPeopleAndUpdate = () => compose(getPeopleMachine(), updatePeopleMachine())
 ```

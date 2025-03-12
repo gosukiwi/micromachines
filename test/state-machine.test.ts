@@ -177,6 +177,8 @@ test("compose 2 machines using builder", async () => {
 
 test("can pass partial context in transitions");
 
+test("can access context between transitions");
+
 test("compose 3 machines using builder", async () => {
   expect.assertions(4);
 
