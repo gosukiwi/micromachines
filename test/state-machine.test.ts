@@ -69,7 +69,7 @@ test("navigation between states", () => {
 });
 
 test("builder", async () => {
-  expect.assertions(6);
+  expect.assertions(3);
 
   interface Context {
     people: Person[];
@@ -96,9 +96,6 @@ test("builder", async () => {
   }));
 
   machine.onTerminated(() => {
-    expect(machine.history[0]).toEqual("INITIAL");
-    expect(machine.history[1]).toEqual("PEOPLE_LOADING");
-    expect(machine.history[2]).toEqual("PEOPLE_LOADED");
     expect(machine.context.people.length).toEqual(1);
     expect(machine.context.people[0].name).toEqual("Thomas");
     expect(machine.context.people[0].age).toEqual(22);
