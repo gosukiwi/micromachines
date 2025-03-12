@@ -1,8 +1,23 @@
 {
-  "name": "react-micromachines-remake",
-  "private": true,
+  "name": "micro-machines",
+  "private": false,
   "version": "0.0.0",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/micro-machines.cjs",
+  "module": "./dist/micro-machines.js",
+  "exports": {
+    ".": {
+      "import": "./dist/micro-machines.js",
+      "require": "./dist/micro-machines.cjs"
+    },
+    "./react": {
+      "import": "./dist/react/micro-machines.js",
+      "require": "./dist/react/micro-machines.cjs"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
