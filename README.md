@@ -78,4 +78,27 @@ const AutoStartDemo = () => {
 };
 ```
 
-Machines are designed to run a process and track its progress.
+To handle errors, simply go to an error state:
+
+```typescript
+const peopleMachine = () =>
+  createMachine<Context, States>((transition) => ({
+    context: {
+      people: [],
+      error?: Error,
+    },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL() {
+        const people = await fetchPeople();
+        try {
+          await transition("FINAL", { people });
+        } catch (error) {
+          await transition("ERROR", { error: new Error("Something went wrong!") })
+        }
+      },
+      FINAL: undefined,
+    },
+  }));
+```

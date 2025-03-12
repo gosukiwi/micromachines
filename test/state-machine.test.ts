@@ -32,24 +32,24 @@ test("navigation between states", async () => {
 
   // Add states
   machine.addState(
-    new State("INITIAL", () => {
-      machine.transition("PEOPLE_LOADING");
+    new State("INITIAL", async () => {
+      await machine.transition("PEOPLE_LOADING");
     }),
   );
 
   machine.addState(
     new State("PEOPLE_LOADING", async () => {
       const people = await fetchPeople();
-      machine.transition("PEOPLE_LOADED", { people });
+      await machine.transition("PEOPLE_LOADED", { people });
     }),
   );
 
   machine.addState(
-    new State("PEOPLE_LOADED", () => {
+    new State("PEOPLE_LOADED", async () => {
       expect(machine.context.people.length).toEqual(1);
       expect(machine.context.people[0].name).toEqual("Thomas");
       expect(machine.context.people[0].age).toEqual(22);
-      machine.transition("FINAL");
+      await machine.transition("FINAL");
     }),
   );
 
@@ -86,12 +86,12 @@ test("builder", async () => {
     initial: "INITIAL",
     final: "PEOPLE_LOADED",
     states: {
-      INITIAL() {
-        transition("PEOPLE_LOADING");
+      async INITIAL() {
+        await transition("PEOPLE_LOADING");
       },
       async PEOPLE_LOADING() {
         const people = await fetchPeople();
-        transition("PEOPLE_LOADED", { people });
+        await transition("PEOPLE_LOADED", { people });
       },
       PEOPLE_LOADED: undefined,
     },
@@ -104,7 +104,7 @@ test("builder", async () => {
   });
 
   // Set initial state and dispatch initial event
-  machine.start();
+  await machine.start();
 
   while (!machine.terminated) {
     await setTimeout(10);
@@ -128,8 +128,8 @@ test("compose 2 machines using builder", async () => {
       initial: "INITIAL",
       final: "FINAL",
       states: {
-        INITIAL() {
-          transition("FINAL", { name: "Fede" });
+        async INITIAL() {
+          await transition("FINAL", { name: "Fede" });
         },
         FINAL: undefined,
       },
@@ -150,8 +150,8 @@ test("compose 2 machines using builder", async () => {
       final: "FINAL",
       context: { age: 0 },
       states: {
-        INITIAL() {
-          transition("FINAL", { age: 35 });
+        async INITIAL() {
+          await transition("FINAL", { age: 35 });
         },
         FINAL: undefined,
       },
@@ -175,6 +175,8 @@ test("compose 2 machines using builder", async () => {
   }
 });
 
+test("can pass partial context in transitions");
+
 test("compose 3 machines using builder", async () => {
   expect.assertions(4);
 
@@ -192,8 +194,8 @@ test("compose 3 machines using builder", async () => {
       initial: "INITIAL",
       final: "FINAL",
       states: {
-        INITIAL() {
-          transition("FINAL", { name: "Fede" });
+        async INITIAL() {
+          await transition("FINAL", { name: "Fede" });
         },
         FINAL: undefined,
       },
@@ -214,8 +216,8 @@ test("compose 3 machines using builder", async () => {
       final: "FINAL",
       context: { age: 0 },
       states: {
-        INITIAL() {
-          transition("FINAL", { age: 35 });
+        async INITIAL() {
+          await transition("FINAL", { age: 35 });
         },
         FINAL: undefined,
       },
@@ -236,8 +238,8 @@ test("compose 3 machines using builder", async () => {
       final: "FINAL",
       context: { country: "" },
       states: {
-        INITIAL() {
-          transition("FINAL", { country: "Argentina" });
+        async INITIAL() {
+          await transition("FINAL", { country: "Argentina" });
         },
         FINAL: undefined,
       },
@@ -249,7 +251,6 @@ test("compose 3 machines using builder", async () => {
   const composite = compose(machineA, machineB, machineC);
 
   composite.onTerminated(({ state, context }) => {
-    console.log("onTerminateCalled COMPOSITE");
     expect(state).toEqual("FINAL");
     expect(context.name).toEqual("Fede");
     expect(context.age).toEqual(35);

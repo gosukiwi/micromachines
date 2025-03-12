@@ -62,11 +62,11 @@ export class StateMachine<T> implements Machine<T> {
     this.states.push(state);
   }
 
-  async start(context?: T) {
+  async start(context?: Partial<T>) {
     await this.transition(this.initial, context);
   }
 
-  async transition(name: string, context?: T) {
+  async transition(name: string, context?: Partial<T>) {
     const state = this.getState(name);
     if (state.name === this.currentState?.name)
       throw new Error(`Already in ${name}`);
@@ -74,7 +74,7 @@ export class StateMachine<T> implements Machine<T> {
     this.history.push(name);
 
     if (context !== undefined) {
-      this.context = context;
+      this.context = { ...this.context, ...context };
     }
 
     this.currentState = state;
@@ -222,6 +222,7 @@ export function compose<Machines extends Machine<unknown>[]>(
 
   let currentContext: MachineContexts<Machines> = machines.reduce(
     // @ts-expect-error - This is fine because we're merging the context
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     (acc, machine) => ({ ...acc, ...machine.context }),
     {} as MachineContexts<Machines>,
   );
@@ -237,18 +238,22 @@ export function compose<Machines extends Machine<unknown>[]>(
   machines.forEach((machine, index) => {
     machine.onStateChanged(({ state, context }) => {
       // @ts-expect-error - This is fine because we're merging the context
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       currentContext = { ...currentContext, ...context };
       if (onStateChangedCallback) {
         onStateChangedCallback({ state, context: currentContext });
       }
     });
 
-    machine.onTerminated(async ({ state, context }) => {
+    machine.onTerminated(({ state, context }) => {
       // @ts-expect-error - This is fine because we're merging the context
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       currentContext = { ...currentContext, ...context };
 
       if (index < machines.length - 1 && machine.success) {
-        await machines[index + 1].start();
+        machines[index + 1].start().catch((err: unknown) => {
+          throw err;
+        });
         return;
       }
 
@@ -297,11 +302,11 @@ interface MachineDefinition<T, S extends string> {
 
 export const createMachine = <Context, States extends string>(
   fn: (
-    transition: (name: States, context?: Context) => Promise<void>,
+    transition: (name: States, context?: Partial<Context>) => Promise<void>,
   ) => MachineDefinition<Context, States>,
 ): Machine<Context> => {
   // Helper function to transition a state in the current machine
-  const transition = async (name: States, context?: Context) => {
+  const transition = async (name: States, context?: Partial<Context>) => {
     await machine.transition(name, context);
   };
 
