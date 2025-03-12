@@ -63,8 +63,6 @@ export class StateMachine<T> implements Machine<T> {
   }
 
   async start(context?: T) {
-    if (this.initial === undefined)
-      throw new Error("Set an initial state in order to call start");
     await this.transition(this.initial, context);
   }
 
@@ -112,7 +110,7 @@ export class StateMachine<T> implements Machine<T> {
 
   get success() {
     if (this.currentState === undefined) return false;
-    return this.final.includes(this.currentState?.name);
+    return this.final.includes(this.currentState.name);
   }
 
   get terminated() {
