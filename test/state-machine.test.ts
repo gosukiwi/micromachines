@@ -77,22 +77,22 @@ test("builder", async () => {
 
   type States = "INITIAL" | "PEOPLE_LOADING" | "PEOPLE_LOADED";
 
-  const machine = createMachine<Context, States>((state, transition) => ({
+  const machine = createMachine<Context, States>((transition) => ({
     context: {
       people: [],
     },
     initial: "INITIAL",
     final: "PEOPLE_LOADED",
-    states: [
-      state("INITIAL", () => {
+    states: {
+      INITIAL() {
         transition("PEOPLE_LOADING");
-      }),
-      state("PEOPLE_LOADING", async () => {
+      },
+      async PEOPLE_LOADING() {
         const people = await fetchPeople();
         transition("PEOPLE_LOADED", { people });
-      }),
-      state("PEOPLE_LOADED"),
-    ],
+      },
+      PEOPLE_LOADED: undefined,
+    },
   }));
 
   machine.onTerminated(() => {
@@ -161,7 +161,7 @@ test("compose machines", () => {
   machineA.start();
 });
 
-test("compose machines using builder", async () => {
+test("compose 2 machines using builder", async () => {
   expect.assertions(3);
 
   // Machine A
@@ -173,16 +173,16 @@ test("compose machines using builder", async () => {
   type MachineAStates = "INITIAL" | "FINAL";
 
   const machineA = createMachine<MachineAContext, MachineAStates>(
-    (state, transition) => ({
+    (transition) => ({
       context: { name: "" },
       initial: "INITIAL",
       final: "FINAL",
-      states: [
-        state("INITIAL", () => {
+      states: {
+        INITIAL() {
           transition("FINAL", { name: "Fede" });
-        }),
-        state("FINAL"),
-      ],
+        },
+        FINAL: undefined,
+      },
     }),
   );
 
@@ -195,16 +195,16 @@ test("compose machines using builder", async () => {
   type MachineBStates = "INITIAL" | "FINAL";
 
   const machineB = createMachine<MachineBContext, MachineBStates>(
-    (state, transition) => ({
+    (transition) => ({
       initial: "INITIAL",
       final: "FINAL",
       context: { age: 0 },
-      states: [
-        state("INITIAL", () => {
+      states: {
+        INITIAL() {
           transition("FINAL", { age: 35 });
-        }),
-        state("FINAL"),
-      ],
+        },
+        FINAL: undefined,
+      },
     }),
   );
 
@@ -216,6 +216,89 @@ test("compose machines using builder", async () => {
     expect(state).toEqual("FINAL");
     expect(context.name).toEqual("Fede");
     expect(context.age).toEqual(35);
+  });
+
+  composite.start();
+});
+
+test("compose 3 machines using builder", async () => {
+  expect.assertions(4);
+
+  // Machine A
+  // ===========================================================================
+  interface MachineAContext {
+    name: string;
+  }
+
+  type MachineAStates = "INITIAL" | "FINAL";
+
+  const machineA = createMachine<MachineAContext, MachineAStates>(
+    (transition) => ({
+      context: { name: "" },
+      initial: "INITIAL",
+      final: "FINAL",
+      states: {
+        INITIAL() {
+          transition("FINAL", { name: "Fede" });
+        },
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Machine B
+  // ===========================================================================
+  interface MachineBContext {
+    age: number;
+  }
+
+  type MachineBStates = "INITIAL" | "FINAL";
+
+  const machineB = createMachine<MachineBContext, MachineBStates>(
+    (transition) => ({
+      initial: "INITIAL",
+      final: "FINAL",
+      context: { age: 0 },
+      states: {
+        INITIAL() {
+          transition("FINAL", { age: 35 });
+        },
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Machine C
+  // ===========================================================================
+  interface MachineCContext {
+    country: string;
+  }
+
+  type MachineCStates = "INITIAL" | "FINAL";
+
+  const machineC = createMachine<MachineCContext, MachineCStates>(
+    (transition) => ({
+      initial: "INITIAL",
+      final: "FINAL",
+      context: { country: "" },
+      states: {
+        INITIAL() {
+          transition("FINAL", { country: "Argentina" });
+        },
+        FINAL: undefined,
+      },
+    }),
+  );
+
+  // Create a composite machine (instance) from two machines (also instances)
+  // ===========================================================================
+  const composite = compose(machineA, machineB, machineC);
+
+  composite.onTerminated(({ state, context }) => {
+    expect(state).toEqual("FINAL");
+    expect(context.name).toEqual("Fede");
+    expect(context.age).toEqual(35);
+    expect(context.country).toEqual("Argentina");
   });
 
   composite.start();

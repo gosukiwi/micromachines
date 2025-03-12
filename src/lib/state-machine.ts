@@ -114,115 +114,180 @@ export class StateMachine<T> implements Machine<T> {
   }
 }
 
-export const compose = <A, B>(
-  machineA: Machine<A>,
-  machineB: Machine<B>,
-): Machine<A & B> => {
-  // let currentState: string | undefined = undefined;
-  let currentContext: A & B = { ...machineA.context, ...machineB.context };
-  let onStateChangedCallback: MachineCallback<A & B> | undefined = undefined;
-  let onTerminatedCallback: MachineCallback<A & B> | undefined = undefined;
+// Compose machines
+// =============================================================================
+// const compose2 = <A, B>(
+//   machineA: Machine<A>,
+//   machineB: Machine<B>,
+// ): Machine<A & B> => {
+//   // let currentState: string | undefined = undefined;
+//   let currentContext: A & B = { ...machineA.context, ...machineB.context };
+//   let onStateChangedCallback: MachineCallback<A & B> | undefined = undefined;
+//   let onTerminatedCallback: MachineCallback<A & B> | undefined = undefined;
 
-  machineA.onStateChanged(({ state, context }) => {
-    // currentState = state;
-    currentContext = { ...currentContext, ...context };
+//   machineA.onStateChanged(({ state, context }) => {
+//     // currentState = state;
+//     currentContext = { ...currentContext, ...context };
 
-    if (!onStateChangedCallback) return;
+//     if (!onStateChangedCallback) return;
 
-    onStateChangedCallback({
-      state,
-      context: currentContext,
+//     onStateChangedCallback({
+//       state,
+//       context: currentContext,
+//     });
+//   });
+
+//   machineA.onTerminated(async ({ state, context }) => {
+//     currentContext = { ...currentContext, ...context };
+
+//     // Transition to B
+//     if (machineA.success) {
+//       await machineB.start();
+//       return;
+//     }
+
+//     // Otherwise the machine didn't reach the final state, so we stop
+//     if (onTerminatedCallback !== undefined) {
+//       onTerminatedCallback({
+//         state,
+//         context: currentContext,
+//       });
+//     }
+//   });
+
+//   machineB.onStateChanged(({ state, context }) => {
+//     // currentState = state;
+//     currentContext = { ...currentContext, ...context };
+
+//     if (!onStateChangedCallback) return;
+
+//     onStateChangedCallback({
+//       state,
+//       context: currentContext,
+//     });
+//   });
+
+//   machineB.onTerminated(({ state, context }) => {
+//     currentContext = { ...currentContext, ...context };
+
+//     if (onTerminatedCallback === undefined) return;
+
+//     onTerminatedCallback({
+//       state,
+//       context: currentContext,
+//     });
+//   });
+
+//   return {
+//     context: currentContext,
+//     async start(context?: A & B) {
+//       await machineA.start(context);
+//     },
+//     get success() {
+//       return machineA.success && machineB.success;
+//     },
+//     onStateChanged(callback: MachineCallback<A & B>) {
+//       onStateChangedCallback = callback;
+//     },
+//     onTerminated(callback: MachineCallback<A & B>) {
+//       onTerminatedCallback = callback;
+//     },
+//   };
+// };
+
+type UnionToIntersection<U> = (
+  U extends unknown ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
+type MachineContexts<Machines extends Machine<unknown>[]> = UnionToIntersection<
+  Machines[number]["context"]
+>;
+
+export function compose<Machines extends Machine<unknown>[]>(
+  ...machines: Machines
+): Machine<MachineContexts<Machines>> {
+  if (machines.length < 2)
+    throw new Error("At least two machines are required.");
+
+  let currentContext: MachineContexts<Machines> = machines.reduce(
+    // @ts-expect-error - This is fine because we're merging the context
+    (acc, machine) => ({ ...acc, ...machine.context }),
+    {} as MachineContexts<Machines>,
+  );
+
+  let onStateChangedCallback:
+    | MachineCallback<MachineContexts<Machines>>
+    | undefined;
+  let onTerminatedCallback:
+    | MachineCallback<MachineContexts<Machines>>
+    | undefined;
+
+  machines.forEach((machine, index) => {
+    machine.onStateChanged(({ state, context }) => {
+      // @ts-expect-error - This is fine because we're merging the context
+      currentContext = { ...currentContext, ...context };
+      if (onStateChangedCallback) {
+        onStateChangedCallback({ state, context: currentContext });
+      }
     });
-  });
 
-  machineA.onTerminated(async ({ state, context }) => {
-    currentContext = { ...currentContext, ...context };
+    machine.onTerminated(async ({ state, context }) => {
+      // @ts-expect-error - This is fine because we're merging the context
+      currentContext = { ...currentContext, ...context };
 
-    // Transition to B
-    if (machineA.success) {
-      await machineB.start();
-      return;
-    }
+      if (index < machines.length - 1 && machine.success) {
+        await machines[index + 1].start();
+        return;
+      }
 
-    // Otherwise the machine didn't reach the final state, so we stop
-    if (onTerminatedCallback !== undefined) {
-      onTerminatedCallback({
-        state,
-        context: currentContext,
-      });
-    }
-  });
-
-  machineB.onStateChanged(({ state, context }) => {
-    // currentState = state;
-    currentContext = { ...currentContext, ...context };
-
-    if (!onStateChangedCallback) return;
-
-    onStateChangedCallback({
-      state,
-      context: currentContext,
-    });
-  });
-
-  machineB.onTerminated(({ state, context }) => {
-    currentContext = { ...currentContext, ...context };
-
-    if (onTerminatedCallback === undefined) return;
-
-    onTerminatedCallback({
-      state,
-      context: currentContext,
+      if (onTerminatedCallback) {
+        onTerminatedCallback({ state, context: currentContext });
+      }
     });
   });
 
   return {
     context: currentContext,
-    async start(context?: A & B) {
-      await machineA.start(context);
+    async start(context?: MachineContexts<Machines>) {
+      if (machines.length > 0) {
+        await machines[0].start(context);
+      }
     },
     get success() {
-      return machineA.success && machineB.success;
+      return machines.every((machine) => machine.success);
     },
-    onStateChanged(callback: MachineCallback<A & B>) {
+    onStateChanged(callback: MachineCallback<MachineContexts<Machines>>) {
       onStateChangedCallback = callback;
     },
-    onTerminated(callback: MachineCallback<A & B>) {
+    onTerminated(callback: MachineCallback<MachineContexts<Machines>>) {
       onTerminatedCallback = callback;
     },
   };
-};
+}
 
 // Builder
 // =============================================================================
-interface MachineDefinition<T, S> {
+interface MachineDefinition<T, S extends string> {
   context: T;
   initial: S;
   final: S | S[];
-  states: State[];
+  states: Record<S, onEnterCallback | undefined>;
 }
-
-type StateBuilder<States> = (name: States, callback?: onEnterCallback) => State;
 
 export const createMachine = <Context, States extends string>(
   fn: (
-    stateBuilder: StateBuilder<States>,
     transition: (name: States, context?: Context) => Promise<void>,
   ) => MachineDefinition<Context, States>,
 ): Machine<Context> => {
-  // Helper state builder, tied to these generic types
-  const createState: StateBuilder<States> = (
-    name: States,
-    callback?: onEnterCallback,
-  ) => new State(name, callback);
-
   // Helper function to transition a state in the current machine
   const transition = async (name: States, context?: Context) => {
     await machine.transition(name, context);
   };
 
   // Create the machine
-  const definition = fn(createState, transition);
+  const definition = fn(transition);
   const machine = new StateMachine<Context>({
     initial: definition.initial,
     final: Array.isArray(definition.final)
@@ -230,7 +295,11 @@ export const createMachine = <Context, States extends string>(
       : [definition.final],
     context: definition.context,
   });
-  definition.states.forEach((state) => {
+  Object.entries(definition.states).forEach(([stateName, onEnterCallback]) => {
+    const state = new State(
+      stateName,
+      onEnterCallback as onEnterCallback | undefined,
+    );
     machine.addState(state);
   });
 
