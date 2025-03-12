@@ -1,17 +1,17 @@
-type onEnterCallback = () => void | Promise<void>;
+type onEnterCallback<T> = (context: T) => void | Promise<void>;
 
-export class State {
+export class State<T> {
   name: string;
-  onEnter?: onEnterCallback;
+  onEnter?: onEnterCallback<T>;
 
-  constructor(name: string, onEnter?: onEnterCallback) {
+  constructor(name: string, onEnter?: onEnterCallback<T>) {
     this.name = name;
     this.onEnter = onEnter;
   }
 
-  async emitOnEnter() {
+  async emitOnEnter(context: T) {
     if (this.onEnter === undefined) return;
-    await this.onEnter();
+    await this.onEnter(context);
   }
 
   get isTerminal() {
@@ -34,10 +34,10 @@ export interface Machine<T> {
 
 export class StateMachine<T> implements Machine<T> {
   context: T;
-  states: State[];
+  states: State<T>[];
   initial: string;
   final: string[];
-  currentState?: State;
+  currentState?: State<T>;
   onStateChangedCallback?: (params: { state: string; context: T }) => void;
   onTerminatedCallback?: (params: { state: string; context: T }) => void;
   history: string[];
@@ -58,7 +58,7 @@ export class StateMachine<T> implements Machine<T> {
     this.history = [];
   }
 
-  addState(state: State) {
+  addState(state: State<T>) {
     this.states.push(state);
   }
 
@@ -89,7 +89,7 @@ export class StateMachine<T> implements Machine<T> {
         });
       }
     } else {
-      await this.currentState.emitOnEnter();
+      await this.currentState.emitOnEnter(this.context);
     }
   }
 
@@ -297,7 +297,7 @@ interface MachineDefinition<T, S extends string> {
   context: T;
   initial: S;
   final: S | S[];
-  states: Record<S, onEnterCallback | undefined>;
+  states: Record<S, onEnterCallback<T> | undefined>;
 }
 
 export const createMachine = <Context, States extends string>(
@@ -319,10 +319,11 @@ export const createMachine = <Context, States extends string>(
       : [definition.final],
     context: definition.context,
   });
+
   Object.entries(definition.states).forEach(([stateName, onEnterCallback]) => {
     const state = new State(
       stateName,
-      onEnterCallback as onEnterCallback | undefined,
+      onEnterCallback as onEnterCallback<Context> | undefined,
     );
     machine.addState(state);
   });

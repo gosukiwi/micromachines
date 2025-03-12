@@ -177,7 +177,33 @@ test("compose 2 machines using builder", async () => {
 
 test("can pass partial context in transitions");
 
-test("can access context between transitions");
+test("can access context between transitions", async () => {
+  interface Context {
+    count: number;
+  }
+
+  type States = "INITIAL" | "FINAL";
+
+  const machine = createMachine<Context, States>((transition) => ({
+    context: { count: 10 },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL(context) {
+        await transition("FINAL", { count: context.count + 1 });
+      },
+      FINAL: undefined,
+    },
+  }));
+
+  await machine.start();
+
+  while (!machine.terminated) {
+    await setTimeout(10);
+  }
+
+  expect(machine.context.count).toEqual(11);
+});
 
 test("compose 3 machines using builder", async () => {
   expect.assertions(4);

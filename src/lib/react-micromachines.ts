@@ -17,7 +17,7 @@ export const useMachine = <T>(getMachine: () => Machine<T>) => {
     const machine = getMachine();
 
     machine.onStateChanged(({ state, context }) => {
-      setMachineState({ state, context });
+      setMachineState({ state, context: { ...context } });
     });
 
     setMachine(machine);
