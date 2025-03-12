@@ -97,6 +97,8 @@ const peopleMachine = () =>
     final: "FINAL",
     states: {
       async INITIAL() {
+        // IMPORTANT: Note that a non-terminal state must always transition to
+        // another state, otherwise the machine will be left waiting forever
         const people = await fetchPeople();
         try {
           await transition("FINAL", { people });
@@ -137,11 +139,16 @@ const updatePeopleMachine = () =>
     initial: "INITIAL",
     final: "FINAL",
     states: {
-      async INITIAL() {
-        const people = await updatePeople(context.people);
-        await transition('FINAL');
+      async INITIAL({ people }) {
+        const result = await updatePeople(people);
+        if (result.success) {
+          await transition('FINAL');
+        } else {
+          await transition('ERROR');
+        }
       },
       FINAL: undefined,
+      ERROR: undefined,
     },
   }));
 
