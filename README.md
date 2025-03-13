@@ -1,4 +1,4 @@
-# Micro Machines
+# Micromachines
 
 Minimalistic state machines for TypeScript and React.
 
@@ -97,8 +97,9 @@ const peopleMachine = () =>
     final: "FINAL",
     states: {
       async INITIAL() {
-        // IMPORTANT: Note that a non-terminal state must always transition to
-        // another state, otherwise the machine will be left waiting forever
+        // IMPORTANT: Note that a non-terminal state (a state that's not undefined)
+        // must always transition to another state, otherwise the machine will be
+        // stuck in that state, and will not terminate.
         const people = await fetchPeople();
         try {
           await transition("FINAL", { people });
@@ -107,6 +108,7 @@ const peopleMachine = () =>
         }
       },
       FINAL: undefined,
+      ERROR: undefined,
     },
   }));
 ```
