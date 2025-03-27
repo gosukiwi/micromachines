@@ -124,35 +124,5 @@ const { start, state, context, success, terminated } =
 
 ## Composing Machines
 
-To get the most out of micro machines, design each machine with a single task
-in mind, and then compose them if you need to run one after the other, eg:
-
-```typescript
-// Same as before, a machine that returns a `people` array in Context
-const getPeopleMachine = () =>
-  createMachine<GetPeopleContext, GetPeopleStates>((transition) => ({ ... }));
-
-// This is a new machine that will use the `people` array
-const updatePeopleMachine = () =>
-  createMachine<Context, States>((transition) => ({
-    context: {
-      people: [],
-    },
-    initial: "INITIAL",
-    final: "FINAL",
-    states: {
-      async INITIAL({ people }) {
-        const result = await updatePeople(people);
-        if (result.success) {
-          await transition('FINAL');
-        } else {
-          await transition('ERROR');
-        }
-      },
-      FINAL: undefined,
-      ERROR: undefined,
-    },
-  }));
-
-const getPeopleAndUpdate = () => compose(getPeopleMachine(), updatePeopleMachine())
-```
+TODO: Instead of using `transition` you can use another function that takes a
+machine, runs it, and if it succeeds then transition to some other state.
