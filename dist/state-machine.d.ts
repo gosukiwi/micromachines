@@ -12,7 +12,7 @@ type MachineCallback<T> = (params: {
 }) => void;
 export interface Machine<T> {
     context: T;
-    start(context?: T): Promise<void>;
+    start(context?: Partial<T>): Promise<void>;
     onStateChanged(callback: MachineCallback<T>): void;
     onTerminated(callback: MachineCallback<T>): void;
     clearListeners(): void;
@@ -55,9 +55,6 @@ export declare class StateMachine<T> implements Machine<T> {
     get terminated(): boolean;
     clearListeners(): void;
 }
-type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
-type MachineContexts<Machines extends Machine<unknown>[]> = UnionToIntersection<Machines[number]["context"]>;
-export declare function compose<Machines extends Machine<unknown>[]>(...machines: Machines): Machine<MachineContexts<Machines>>;
 interface MachineDefinition<T, S extends string> {
     context: T;
     initial: S;

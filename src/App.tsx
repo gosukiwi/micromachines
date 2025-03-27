@@ -59,7 +59,13 @@ const StartWithActionDemo = () => {
         </div>
       ))}
 
-      <button onClick={start}>Start</button>
+      <button
+        onClick={() => {
+          start();
+        }}
+      >
+        Start
+      </button>
     </div>
   );
 };
