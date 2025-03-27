@@ -28,11 +28,14 @@ export const useMachine = <T>(getMachine: () => Machine<T>) => {
     };
   }, [getMachine]);
 
-  const start = useCallback(() => {
-    machine?.start().catch((err: unknown) => {
-      throw err;
-    });
-  }, [machine]);
+  const start = useCallback(
+    (context?: Partial<T>) => {
+      machine?.start(context).catch((err: unknown) => {
+        throw err;
+      });
+    },
+    [machine],
+  );
 
   return {
     ...machineState,
@@ -43,13 +46,16 @@ export const useMachine = <T>(getMachine: () => Machine<T>) => {
   };
 };
 
-export const useAutoStartingMachine = <T>(getMachine: () => Machine<T>) => {
+export const useAutoStartingMachine = <T>(
+  getMachine: () => Machine<T>,
+  startContext?: T,
+) => {
   const { start, state, context, ready, success, terminated } =
     useMachine(getMachine);
 
   useEffect(() => {
-    if (ready) start();
-  }, [ready, start]);
+    if (ready) start(startContext);
+  }, [ready, start, startContext]);
 
   return {
     state,
