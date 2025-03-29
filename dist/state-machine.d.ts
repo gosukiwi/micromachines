@@ -18,7 +18,6 @@ export declare class StateMachine<T> {
     currentState?: State<T>;
     onStateChangedCallback: MachineCallback<T>[];
     onTerminatedCallback: MachineCallback<T>[];
-    history: string[];
     constructor({ initial, final, context, }: {
         initial: string;
         final: string[];

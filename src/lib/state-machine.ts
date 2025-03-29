@@ -29,7 +29,6 @@ export class StateMachine<T> {
   currentState?: State<T>;
   onStateChangedCallback: MachineCallback<T>[];
   onTerminatedCallback: MachineCallback<T>[];
-  history: string[];
 
   constructor({
     initial,
@@ -44,7 +43,6 @@ export class StateMachine<T> {
     this.final = final;
     this.context = context;
     this.states = [];
-    this.history = [];
     this.onStateChangedCallback = [];
     this.onTerminatedCallback = [];
   }
@@ -61,8 +59,6 @@ export class StateMachine<T> {
     const state = this.getState(name);
     if (state.name === this.currentState?.name)
       throw new Error(`Already in ${name}`);
-
-    this.history.push(name);
 
     if (context !== undefined) {
       this.context = { ...this.context, ...context };

@@ -46,12 +46,17 @@ const StartWithActionDemo = () => {
   const { start, state, context, success, terminated } =
     useMachine(peopleMachine);
 
+  const startMachine = () => {
+    start({ people: [] });
+  };
+
   return (
     <div>
       <h3>This state machine executes after the button is pressed</h3>
       <p>State: {state}</p>
       <p>Success: {success ? "true" : "false"}</p>
       <p>Terminated: {terminated ? "true" : "false"}</p>
+
       {context?.people.map((person) => (
         <div key={person.name}>
           <p>Name: {person.name}</p>
@@ -59,13 +64,7 @@ const StartWithActionDemo = () => {
         </div>
       ))}
 
-      <button
-        onClick={() => {
-          start();
-        }}
-      >
-        Start
-      </button>
+      <button onClick={startMachine}>Start</button>
     </div>
   );
 };

@@ -27,8 +27,7 @@ class d {
     s(this, "currentState");
     s(this, "onStateChangedCallback");
     s(this, "onTerminatedCallback");
-    s(this, "history");
-    this.initial = t, this.final = n, this.context = a, this.states = [], this.history = [], this.onStateChangedCallback = [], this.onTerminatedCallback = [];
+    this.initial = t, this.final = n, this.context = a, this.states = [], this.onStateChangedCallback = [], this.onTerminatedCallback = [];
   }
   addState(t) {
     this.states.push(t);
@@ -41,7 +40,7 @@ class d {
     const a = this.getState(t);
     if (a.name === ((r = this.currentState) == null ? void 0 : r.name))
       throw new Error(`Already in ${t}`);
-    this.history.push(t), n !== void 0 && (this.context = { ...this.context, ...n }), this.currentState = a, this.onStateChangedCallback.forEach((i) => {
+    n !== void 0 && (this.context = { ...this.context, ...n }), this.currentState = a, this.onStateChangedCallback.forEach((i) => {
       i({ state: t, context: this.context });
     }), this.currentState.isTerminal ? this.onTerminatedCallback.forEach((i) => {
       i({
