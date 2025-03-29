@@ -76,6 +76,7 @@ const AutoStartDemo = () => {
     <div>
       <h3>This state machine runs as soon a it's rendered</h3>
       <p>State: {state}</p>
+
       {context?.people.map((person) => (
         <div key={person.name}>
           <p>Name: {person.name}</p>
