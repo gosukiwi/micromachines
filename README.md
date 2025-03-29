@@ -4,11 +4,13 @@ Minimalistic state machines for TypeScript and React.
 
 # Installation
 
-    $ npm i github:gosukiwi/micro-machines
+    $ npm i gosukiwi/micro-machines
 
 # Quickstart
 
 ```typescript
+import { createMachine } from "micro-machines/react";
+
 type States = "INITIAL" | "FINAL";
 
 interface Context {
@@ -42,6 +44,8 @@ fictional People API.
 State machines make it very easy to run a process and track its progress:
 
 ```typescript
+import { useMachine } from 'micro-machines/react'
+
 const StartWithActionDemo = () => {
   const { start, state, context } = useMachine(peopleMachine);
 
@@ -124,5 +128,30 @@ const { start, state, context, success, terminated } =
 
 ## Composing Machines
 
-TODO: Instead of using `transition` you can use another function that takes a
-machine, runs it, and if it succeeds then transition to some other state.
+Machines can call other machines using `runMachine`:
+
+```typescript
+const myMachine = createMachine<MyContext, MyStates>((transition) => ({
+  context: { value: 0 },
+  initial: "INITIAL",
+  final: "FINAL",
+  states: {
+    async INITIAL() {
+      // We use `runMachine` to execute a machine,
+      // and transition accordingly
+      await runMachine({
+        machine: incrementCounterMachine,
+        context: { count: 10 }, // Optional initial context
+        success: async ({ count }) => {
+          await transition("FINAL", { value: count });
+        },
+        failure: async () => {
+          await transition("ERROR");
+        },
+      });
+    },
+    FINAL: undefined,
+    ERROR: undefined,
+  },
+}));
+```
