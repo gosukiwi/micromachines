@@ -137,8 +137,7 @@ const myMachine = createMachine<MyContext, MyStates>((transition) => ({
   final: "FINAL",
   states: {
     async INITIAL() {
-      // We use `runMachine` to execute a machine,
-      // and transition accordingly
+      // We use `runMachine` to execute a machine, and transition accordingly
       await runMachine({
         machine: incrementCounterMachine,
         context: { count: 10 }, // Optional initial context
