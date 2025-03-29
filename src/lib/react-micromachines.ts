@@ -13,6 +13,7 @@ export const useMachine = <T>(getMachine: () => StateMachine<T>) => {
     state: undefined,
   });
 
+  console.log("use machine hook");
   useEffect(() => {
     const machine = getMachine();
 
@@ -30,6 +31,7 @@ export const useMachine = <T>(getMachine: () => StateMachine<T>) => {
 
   const start = useCallback(
     (context?: Partial<T>) => {
+      console.log("Calling start from React hook with", context);
       machine?.start(context).catch((err: unknown) => {
         throw err;
       });

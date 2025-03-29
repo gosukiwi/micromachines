@@ -1,49 +1,49 @@
-import { useState as u, useEffect as i, useCallback as S } from "react";
-import { State as l, StateMachine as m, createMachine as p, runMachine as y } from "../micro-machines.js";
-const h = (a) => {
-  const [t, s] = u(), [n, o] = u({
+import { useState as i, useEffect as u, useCallback as h } from "react";
+import { State as g, StateMachine as v, createMachine as k, runMachine as p } from "../micro-machines.js";
+const l = (a) => {
+  const [t, s] = i(), [r, n] = i({
     context: void 0,
     state: void 0
   });
-  i(() => {
+  console.log("use machine hook"), u(() => {
     const e = a();
-    return e.onStateChanged(({ state: r, context: d }) => {
-      o({ state: r, context: { ...d } });
+    return e.onStateChanged(({ state: o, context: d }) => {
+      n({ state: o, context: { ...d } });
     }), s(e), () => {
       e.clearListeners(), s(void 0);
     };
   }, [a]);
-  const c = S(
+  const c = h(
     (e) => {
-      t == null || t.start(e).catch((r) => {
-        throw r;
+      console.log("Calling start from React hook with", e), t == null || t.start(e).catch((o) => {
+        throw o;
       });
     },
     [t]
   );
   return {
-    ...n,
+    ...r,
     ready: t !== void 0,
     start: c,
     success: (t == null ? void 0 : t.success) === !0,
     terminated: (t == null ? void 0 : t.terminated) === !0
   };
 }, f = (a, t) => {
-  const { start: s, state: n, context: o, ready: c, success: e, terminated: r } = h(a);
-  return i(() => {
+  const { start: s, state: r, context: n, ready: c, success: e, terminated: o } = l(a);
+  return u(() => {
     c && s(t);
   }, [c, s, t]), {
-    state: n,
-    context: o,
+    state: r,
+    context: n,
     success: e,
-    terminated: r
+    terminated: o
   };
 };
 export {
-  l as State,
-  m as StateMachine,
-  p as createMachine,
-  y as runMachine,
+  g as State,
+  v as StateMachine,
+  k as createMachine,
+  p as runMachine,
   f as useAutoStartingMachine,
-  h as useMachine
+  l as useMachine
 };
