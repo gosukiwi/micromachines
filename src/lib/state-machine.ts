@@ -21,25 +21,14 @@ export class State<T> {
 
 type MachineCallback<T> = (params: { state: string; context: T }) => void;
 
-export interface Machine<T> {
-  context: T;
-  start(context?: Partial<T>): Promise<void>;
-  // transition(state: string, context?: T): Promise<void>;
-  onStateChanged(callback: MachineCallback<T>): void;
-  onTerminated(callback: MachineCallback<T>): void;
-  clearListeners(): void;
-  success: boolean;
-  terminated: boolean;
-}
-
-export class StateMachine<T> implements Machine<T> {
+export class StateMachine<T> {
   context: T;
   states: State<T>[];
   initial: string;
   final: string[];
   currentState?: State<T>;
-  onStateChangedCallback?: (params: { state: string; context: T }) => void;
-  onTerminatedCallback?: (params: { state: string; context: T }) => void;
+  onStateChangedCallback: MachineCallback<T>[];
+  onTerminatedCallback: MachineCallback<T>[];
   history: string[];
 
   constructor({
@@ -56,6 +45,8 @@ export class StateMachine<T> implements Machine<T> {
     this.context = context;
     this.states = [];
     this.history = [];
+    this.onStateChangedCallback = [];
+    this.onTerminatedCallback = [];
   }
 
   addState(state: State<T>) {
@@ -78,23 +69,24 @@ export class StateMachine<T> implements Machine<T> {
     }
 
     this.currentState = state;
-    if (this.onStateChangedCallback !== undefined)
-      this.onStateChangedCallback({ state: name, context: this.context });
+    this.onStateChangedCallback.forEach((callback) => {
+      callback({ state: name, context: this.context });
+    });
 
     if (this.currentState.isTerminal) {
-      if (this.onTerminatedCallback !== undefined) {
-        this.onTerminatedCallback({
-          state: this.currentState.name,
+      this.onTerminatedCallback.forEach((callback) => {
+        callback({
+          state: name,
           context: this.context,
         });
-      }
+      });
     } else {
       await this.currentState.emitOnEnter(this.context);
     }
   }
 
-  onStateChanged(callback: (params: { state: string; context: T }) => void) {
-    this.onStateChangedCallback = callback;
+  onStateChanged(callback: MachineCallback<T>) {
+    this.onStateChangedCallback.push(callback);
   }
 
   private getState(stateName: string) {
@@ -104,8 +96,8 @@ export class StateMachine<T> implements Machine<T> {
     return state;
   }
 
-  onTerminated(callback: (params: { state: string; context: T }) => void) {
-    this.onTerminatedCallback = callback;
+  onTerminated(callback: MachineCallback<T>) {
+    this.onTerminatedCallback.push(callback);
   }
 
   get success() {
@@ -118,8 +110,8 @@ export class StateMachine<T> implements Machine<T> {
   }
 
   clearListeners() {
-    this.onStateChangedCallback = undefined;
-    this.onTerminatedCallback = undefined;
+    this.onStateChangedCallback = [];
+    this.onTerminatedCallback = [];
   }
 }
 
@@ -136,7 +128,7 @@ export const createMachine = <Context, States extends string>(
   fn: (
     transition: (name: States, context?: Partial<Context>) => Promise<void>,
   ) => MachineDefinition<Context, States>,
-): Machine<Context> => {
+): StateMachine<Context> => {
   // Helper function to transition a state in the current machine
   const transition = async (name: States, context?: Partial<Context>) => {
     await machine.transition(name, context);
@@ -161,4 +153,34 @@ export const createMachine = <Context, States extends string>(
   });
 
   return machine;
+};
+
+// Compose
+// =============================================================================
+type CallMachineCallback<T> = (context: T) => Promise<void>;
+
+export const runMachine = async <T>({
+  machine,
+  context,
+  success,
+  failure,
+}: {
+  machine: StateMachine<T>;
+  context?: Partial<T>;
+  success: CallMachineCallback<T>;
+  failure: CallMachineCallback<T>;
+}) => {
+  machine.onTerminated(({ context }) => {
+    if (machine.success) {
+      success(context).catch((err: unknown) => {
+        throw err;
+      });
+    } else {
+      failure(context).catch((err: unknown) => {
+        throw err;
+      });
+    }
+  });
+
+  await machine.start(context);
 };

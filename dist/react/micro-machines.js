@@ -1,6 +1,6 @@
 import { useState as u, useEffect as i, useCallback as S } from "react";
-import { State as l, StateMachine as m, createMachine as p } from "../micro-machines.js";
-const f = (a) => {
+import { State as l, StateMachine as m, createMachine as p, runMachine as y } from "../micro-machines.js";
+const h = (a) => {
   const [t, s] = u(), [n, o] = u({
     context: void 0,
     state: void 0
@@ -28,8 +28,8 @@ const f = (a) => {
     success: (t == null ? void 0 : t.success) === !0,
     terminated: (t == null ? void 0 : t.terminated) === !0
   };
-}, M = (a, t) => {
-  const { start: s, state: n, context: o, ready: c, success: e, terminated: r } = f(a);
+}, f = (a, t) => {
+  const { start: s, state: n, context: o, ready: c, success: e, terminated: r } = h(a);
   return i(() => {
     c && s(t);
   }, [c, s, t]), {
@@ -43,6 +43,7 @@ export {
   l as State,
   m as StateMachine,
   p as createMachine,
-  M as useAutoStartingMachine,
-  f as useMachine
+  y as runMachine,
+  f as useAutoStartingMachine,
+  h as useMachine
 };

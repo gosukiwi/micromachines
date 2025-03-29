@@ -1,11 +1,11 @@
-var c = Object.defineProperty;
-var h = (a, t, i) => t in a ? c(a, t, { enumerable: !0, configurable: !0, writable: !0, value: i }) : a[t] = i;
-var n = (a, t, i) => h(a, typeof t != "symbol" ? t + "" : t, i);
+var o = Object.defineProperty;
+var h = (e, t, n) => t in e ? o(e, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : e[t] = n;
+var s = (e, t, n) => h(e, typeof t != "symbol" ? t + "" : t, n);
 class l {
-  constructor(t, i) {
-    n(this, "name");
-    n(this, "onEnter");
-    this.name = t, this.onEnter = i;
+  constructor(t, n) {
+    s(this, "name");
+    s(this, "onEnter");
+    this.name = t, this.onEnter = n;
   }
   async emitOnEnter(t) {
     this.onEnter !== void 0 && await this.onEnter(t);
@@ -17,18 +17,18 @@ class l {
 class d {
   constructor({
     initial: t,
-    final: i,
-    context: e
+    final: n,
+    context: a
   }) {
-    n(this, "context");
-    n(this, "states");
-    n(this, "initial");
-    n(this, "final");
-    n(this, "currentState");
-    n(this, "onStateChangedCallback");
-    n(this, "onTerminatedCallback");
-    n(this, "history");
-    this.initial = t, this.final = i, this.context = e, this.states = [], this.history = [];
+    s(this, "context");
+    s(this, "states");
+    s(this, "initial");
+    s(this, "final");
+    s(this, "currentState");
+    s(this, "onStateChangedCallback");
+    s(this, "onTerminatedCallback");
+    s(this, "history");
+    this.initial = t, this.final = n, this.context = a, this.states = [], this.history = [], this.onStateChangedCallback = [], this.onTerminatedCallback = [];
   }
   addState(t) {
     this.states.push(t);
@@ -36,26 +36,30 @@ class d {
   async start(t) {
     await this.transition(this.initial, t);
   }
-  async transition(t, i) {
-    var s;
-    const e = this.getState(t);
-    if (e.name === ((s = this.currentState) == null ? void 0 : s.name))
+  async transition(t, n) {
+    var r;
+    const a = this.getState(t);
+    if (a.name === ((r = this.currentState) == null ? void 0 : r.name))
       throw new Error(`Already in ${t}`);
-    this.history.push(t), i !== void 0 && (this.context = { ...this.context, ...i }), this.currentState = e, this.onStateChangedCallback !== void 0 && this.onStateChangedCallback({ state: t, context: this.context }), this.currentState.isTerminal ? this.onTerminatedCallback !== void 0 && this.onTerminatedCallback({
-      state: this.currentState.name,
-      context: this.context
+    this.history.push(t), n !== void 0 && (this.context = { ...this.context, ...n }), this.currentState = a, this.onStateChangedCallback.forEach((i) => {
+      i({ state: t, context: this.context });
+    }), this.currentState.isTerminal ? this.onTerminatedCallback.forEach((i) => {
+      i({
+        state: t,
+        context: this.context
+      });
     }) : await this.currentState.emitOnEnter(this.context);
   }
   onStateChanged(t) {
-    this.onStateChangedCallback = t;
+    this.onStateChangedCallback.push(t);
   }
   getState(t) {
-    const i = this.states.find((e) => e.name === t);
-    if (i === void 0) throw new Error(`Invalid state: ${t}`);
-    return i;
+    const n = this.states.find((a) => a.name === t);
+    if (n === void 0) throw new Error(`Invalid state: ${t}`);
+    return n;
   }
   onTerminated(t) {
-    this.onTerminatedCallback = t;
+    this.onTerminatedCallback.push(t);
   }
   get success() {
     return this.currentState === void 0 ? !1 : this.final.includes(this.currentState.name);
@@ -65,27 +69,41 @@ class d {
     return ((t = this.currentState) == null ? void 0 : t.isTerminal) === !0;
   }
   clearListeners() {
-    this.onStateChangedCallback = void 0, this.onTerminatedCallback = void 0;
+    this.onStateChangedCallback = [], this.onTerminatedCallback = [];
   }
 }
-const S = (a) => {
-  const i = a(async (s, r) => {
-    await e.transition(s, r);
-  }), e = new d({
-    initial: i.initial,
-    final: Array.isArray(i.final) ? i.final : [i.final],
-    context: i.context
+const f = (e) => {
+  const n = e(async (r, i) => {
+    await a.transition(r, i);
+  }), a = new d({
+    initial: n.initial,
+    final: Array.isArray(n.final) ? n.final : [n.final],
+    context: n.context
   });
-  return Object.entries(i.states).forEach(([s, r]) => {
-    const o = new l(
-      s,
-      r
+  return Object.entries(n.states).forEach(([r, i]) => {
+    const c = new l(
+      r,
+      i
     );
-    e.addState(o);
-  }), e;
+    a.addState(c);
+  }), a;
+}, S = async ({
+  machine: e,
+  context: t,
+  success: n,
+  failure: a
+}) => {
+  e.onTerminated(({ context: r }) => {
+    e.success ? n(r).catch((i) => {
+      throw i;
+    }) : a(r).catch((i) => {
+      throw i;
+    });
+  }), await e.start(t);
 };
 export {
   l as State,
   d as StateMachine,
-  S as createMachine
+  f as createMachine,
+  S as runMachine
 };

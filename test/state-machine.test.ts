@@ -1,6 +1,11 @@
 import { setTimeout } from "timers/promises";
 import { expect, test } from "vitest";
-import { StateMachine, State, createMachine } from "../src/lib/state-machine";
+import {
+  StateMachine,
+  State,
+  createMachine,
+  runMachine,
+} from "../src/lib/state-machine";
 
 interface Person {
   name: string;
@@ -134,4 +139,118 @@ test("can access context between transitions", async () => {
   }
 
   expect(machine.context.count).toEqual(11);
+});
+
+test("can compose machines, happy case", async () => {
+  interface ContextA {
+    count: number;
+  }
+
+  type StatesA = "INITIAL" | "FINAL";
+
+  const machineA = createMachine<ContextA, StatesA>((transition) => ({
+    context: { count: 10 },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL(context) {
+        await transition("FINAL", { count: context.count + 1 });
+      },
+      FINAL: undefined,
+    },
+  }));
+
+  interface ContextB {
+    name: string;
+    age: number;
+  }
+
+  type StatesB = "INITIAL" | "FINAL";
+
+  const machineB = createMachine<ContextB, StatesB>((transition) => ({
+    context: { name: "", age: 0 },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL() {
+        await runMachine({
+          machine: machineA,
+          success: async ({ count }) => {
+            await transition("FINAL", { age: count });
+          },
+          failure: async () => {
+            await transition("FINAL", { age: 0 });
+          },
+        });
+      },
+      FINAL: undefined,
+    },
+  }));
+
+  await machineB.start();
+
+  while (!machineB.terminated) {
+    await setTimeout(10);
+  }
+
+  expect(machineB.currentState?.name).toEqual("FINAL");
+  expect(machineB.context.age).toEqual(11);
+});
+
+test("can compose machines, unhappy case", async () => {
+  interface ContextA {
+    count: number;
+  }
+
+  type StatesA = "INITIAL" | "FINAL" | "ERROR";
+
+  const machineA = createMachine<ContextA, StatesA>((transition) => ({
+    context: { count: 10 },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL() {
+        await transition("ERROR");
+      },
+      FINAL: undefined,
+      ERROR: undefined,
+    },
+  }));
+
+  interface ContextB {
+    name: string;
+    age: number;
+  }
+
+  type StatesB = "INITIAL" | "FINAL" | "ERROR";
+
+  const machineB = createMachine<ContextB, StatesB>((transition) => ({
+    context: { name: "", age: 0 },
+    initial: "INITIAL",
+    final: "FINAL",
+    states: {
+      async INITIAL() {
+        await runMachine({
+          machine: machineA,
+          success: async ({ count }) => {
+            await transition("FINAL", { age: count });
+          },
+          failure: async () => {
+            await transition("ERROR", { age: 0 });
+          },
+        });
+      },
+      FINAL: undefined,
+      ERROR: undefined,
+    },
+  }));
+
+  await machineB.start();
+
+  while (!machineB.terminated) {
+    await setTimeout(10);
+  }
+
+  expect(machineB.currentState?.name).toEqual("ERROR");
+  expect(machineB.context.age).toEqual(0);
 });

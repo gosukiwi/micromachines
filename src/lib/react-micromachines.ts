@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { type Machine } from "./state-machine";
+import { type StateMachine } from "./state-machine";
 
 interface MachineState<T> {
   state?: string;
   context?: T;
 }
 
-export const useMachine = <T>(getMachine: () => Machine<T>) => {
-  const [machine, setMachine] = useState<Machine<T> | undefined>();
+export const useMachine = <T>(getMachine: () => StateMachine<T>) => {
+  const [machine, setMachine] = useState<StateMachine<T> | undefined>();
   const [machineState, setMachineState] = useState<MachineState<T>>({
     context: undefined,
     state: undefined,
@@ -47,7 +47,7 @@ export const useMachine = <T>(getMachine: () => Machine<T>) => {
 };
 
 export const useAutoStartingMachine = <T>(
-  getMachine: () => Machine<T>,
+  getMachine: () => StateMachine<T>,
   startContext?: T,
 ) => {
   const { start, state, context, ready, success, terminated } =
