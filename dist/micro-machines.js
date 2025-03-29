@@ -41,13 +41,13 @@ class d {
     if (a.name === ((r = this.currentState) == null ? void 0 : r.name))
       throw new Error(`Already in ${t}`);
     n !== void 0 && (this.context = { ...this.context, ...n }), this.currentState = a, this.onStateChangedCallback.forEach((i) => {
-      i({ state: t, context: this.context });
+      i({ state: t, context: { ...this.context } });
     }), this.currentState.isTerminal ? this.onTerminatedCallback.forEach((i) => {
       i({
         state: t,
-        context: this.context
+        context: { ...this.context }
       });
-    }) : await this.currentState.emitOnEnter(this.context);
+    }) : await this.currentState.emitOnEnter({ ...this.context });
   }
   onStateChanged(t) {
     this.onStateChangedCallback.push(t);

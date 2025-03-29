@@ -66,18 +66,18 @@ export class StateMachine<T> {
 
     this.currentState = state;
     this.onStateChangedCallback.forEach((callback) => {
-      callback({ state: name, context: this.context });
+      callback({ state: name, context: { ...this.context } });
     });
 
     if (this.currentState.isTerminal) {
       this.onTerminatedCallback.forEach((callback) => {
         callback({
           state: name,
-          context: this.context,
+          context: { ...this.context },
         });
       });
     } else {
-      await this.currentState.emitOnEnter(this.context);
+      await this.currentState.emitOnEnter({ ...this.context });
     }
   }
 
