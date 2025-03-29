@@ -4,7 +4,7 @@ Minimalistic state machines for TypeScript and React.
 
 # Installation
 
-    $ npm i gosukiwi/micro-machines
+    $ npm i gosukiwi/micromachines
 
 # Quickstart
 
