@@ -141,10 +141,10 @@ const myMachine = createMachine<MyContext, MyStates>((transition) => ({
       await runMachine({
         machine: incrementCounterMachine,
         context: { count: 10 }, // Optional initial context
-        success: async ({ count }) => {
+        async success({ count }) {
           await transition("FINAL", { value: count });
         },
-        failure: async () => {
+        async failure() {
           await transition("ERROR");
         },
       });
