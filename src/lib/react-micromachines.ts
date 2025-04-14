@@ -48,7 +48,7 @@ export const useMachine = <T>(getMachine: () => StateMachine<T>) => {
 
 export const useAutoStartingMachine = <T>(
   getMachine: () => StateMachine<T>,
-  startContext?: T,
+  startContext?: Partial<T>,
 ) => {
   const { start, state, context, ready, success, terminated } =
     useMachine(getMachine);
