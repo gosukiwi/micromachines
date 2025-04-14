@@ -7,7 +7,7 @@ export declare const useMachine: <T>(getMachine: () => StateMachine<T>) => {
     state?: string;
     context?: T | undefined;
 };
-export declare const useAutoStartingMachine: <T>(getMachine: () => StateMachine<T>, startContext?: T) => {
+export declare const useAutoStartingMachine: <T>(getMachine: () => StateMachine<T>, startContext?: Partial<T>) => {
     state: string | undefined;
     context: T | undefined;
     success: boolean;
