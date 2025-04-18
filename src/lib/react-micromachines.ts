@@ -55,7 +55,7 @@ export const useAutoStartingMachine = <T>(
 
   useEffect(() => {
     if (ready) start(startContext);
-  }, [ready, start, startContext]);
+  }, [ready, start]);
 
   return {
     state,

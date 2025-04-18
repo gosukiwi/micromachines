@@ -32,7 +32,7 @@ const h = (a) => {
   const { start: s, state: n, context: o, ready: c, success: e, terminated: r } = h(a);
   return i(() => {
     c && s(t);
-  }, [c, s, t]), {
+  }, [c, s]), {
     state: n,
     context: o,
     success: e,

@@ -70,7 +70,9 @@ const StartWithActionDemo = () => {
 };
 
 const AutoStartDemo = () => {
-  const { state, context } = useAutoStartingMachine(peopleMachine);
+  const { state, context } = useAutoStartingMachine(peopleMachine, {
+    people: [{ name: "Loading...", age: 0 }],
+  });
 
   return (
     <div>
