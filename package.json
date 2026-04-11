@@ -8,14 +8,24 @@
   ],
   "main": "./dist/micro-machines.cjs",
   "module": "./dist/micro-machines.js",
+  "types": "./dist/micro-machines.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/micro-machines.d.ts",
       "import": "./dist/micro-machines.js",
       "require": "./dist/micro-machines.cjs"
     },
     "./react": {
+      "types": "./dist/react-micromachines.d.ts",
       "import": "./dist/react/micro-machines.js",
       "require": "./dist/react/micro-machines.cjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "react": [
+        "./dist/react-micromachines.d.ts"
+      ]
     }
   },
   "scripts": {
