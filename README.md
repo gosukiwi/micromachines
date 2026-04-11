@@ -88,6 +88,11 @@ const AutoStartDemo = () => {
 };
 ```
 
+`useAutoStartingMachine` applies `startContext` only when the machine auto-starts.
+Changes to `startContext` after that do not restart the machine or re-apply the
+context automatically. If you need to start the machine again with new input,
+use `useMachine` and call `start(...)` explicitly.
+
 To handle errors, simply go to an error state:
 
 ```typescript
